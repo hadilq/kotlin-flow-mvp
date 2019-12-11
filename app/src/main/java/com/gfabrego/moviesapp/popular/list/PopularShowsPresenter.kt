@@ -6,38 +6,38 @@ import com.gfabrego.moviesapp.popular.domain.model.PageRequest
 import com.gfabrego.moviesapp.popular.domain.model.PageRequestFactory
 import com.gfabrego.moviesapp.popular.domain.model.PopularShowsResponse
 import com.gfabrego.moviesapp.popular.domain.model.Show
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 internal class PopularShowsPresenter(
     private val view: PopularShowsView,
     private val getPopularShows: Interactor<GetPopularShows.Params, PopularShowsResponse>,
     private val pageRequestFactory: PageRequestFactory,
-    private val coroutineScope: CoroutineScope
+    private val provider: CoroutineProvider
 ) {
 
-    internal suspend fun attachView() {
+    internal fun attachView() = GlobalScope.launch(provider.MAIN) {
         view.showLoading()
-        withContext(coroutineScope.coroutineContext) {
-            getPopularShows.build(GetPopularShows.Params(buildInitialPage()))
-                .map {
-                    delay(5000)
-                    it
+        getPopularShows.build(GetPopularShows.Params(buildInitialPage()))
+            .map {
+                delay(5000)
+                it
+            }
+            .flowOn(provider.IO)
+            .catch { renderErrorState() }
+            .single()
+            .let {
+                if (it.shows.isEmpty()) {
+                    renderNoResultsState()
+                } else {
+                    renderDisplayShowsState(it.shows)
                 }
-                .catch { renderErrorState() }
-                .single()
-                .let {
-                    if (it.shows.isEmpty()) {
-                        renderNoResultsState()
-                    } else {
-                        renderDisplayShowsState(it.shows)
-                    }
-                }
-        }
+            }
     }
 
     private fun renderNoResultsState() {

@@ -6,9 +6,13 @@ import com.gfabrego.moviesapp.popular.domain.model.PageRequest
 import com.gfabrego.moviesapp.popular.domain.model.PageRequestFactory
 import com.gfabrego.moviesapp.popular.domain.model.PopularShowsResponse
 import com.gfabrego.moviesapp.popular.domain.model.Show
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.runBlockingTest
+import org.junit.After
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.BDDMockito.given
@@ -16,6 +20,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import java.net.URL
+import kotlin.coroutines.CoroutineContext
 
 @RunWith(MockitoJUnitRunner::class)
 class PopularShowsPresenterTest {
@@ -36,10 +41,13 @@ class PopularShowsPresenterTest {
         val shows = anyListOfShows()
         val request = PageRequest.Paged(1)
         given(pageRequestFactory.createInitialPage()).willReturn(request)
-        given(getPopularShows.build(GetPopularShows.Params(request))).willReturn(flowOf(PopularShowsResponse(shows, PageRequest.Paged(2), -1)))
+        given(getPopularShows.build(GetPopularShows.Params(request))).willReturn(
+            flowOf(PopularShowsResponse(shows, PageRequest.Paged(2), -1))
+        )
 
-        buildPresenter().attachView()
+        buildPresenter().attachView().join()
 
+        verify(view).showLoading()
         verify(view).showShows(shows)
     }
 
@@ -51,6 +59,11 @@ class PopularShowsPresenterTest {
             view,
             getPopularShows,
             pageRequestFactory,
-            testScope
+            TestCoroutineProvider(testScope.coroutineContext)
         )
+
+    class TestCoroutineProvider(context: CoroutineContext) : CoroutineProvider() {
+        override val MAIN: CoroutineContext = context
+        override val IO: CoroutineContext = context
+    }
 }
