@@ -62,8 +62,7 @@ class PopularShowsPresenterTest {
             TestCoroutineProvider(testScope.coroutineContext)
         )
 
-    class TestCoroutineProvider(context: CoroutineContext) : CoroutineProvider() {
-        override val MAIN: CoroutineContext = context
+    class TestCoroutineProvider(context: CoroutineContext) : CoroutineProvider(context) {
         override val IO: CoroutineContext = context
     }
 }

@@ -82,7 +82,7 @@ class PopularShowsActivity : AppCompatActivity(), PopularShowsView, CoroutineSco
     //region "INJECTION"
     // TODO: replace with real injection
     private fun injectPresenter(): PopularShowsPresenter =
-        PopularShowsPresenter(this, provideGetPopularShows(), PageRequestFactory(), CoroutineProvider())
+        PopularShowsPresenter(this, provideGetPopularShows(), PageRequestFactory(), CoroutineProvider(coroutineContext))
 
     private fun provideGetPopularShows(): Interactor<GetPopularShows.Params, PopularShowsResponse> =
         GetPopularShows(providePopularShowsRepository())
